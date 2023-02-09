@@ -114,12 +114,6 @@ DATABASES = {
         'PASSWORD': '123456',
         'HOST': 'localhost',
         'PORT': '',
-        # 'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        # 'NAME': 'scb_friday',
-        # 'USER': 'postgres',
-        # 'PASSWORD':'root',
-        # 'HOST': 'localhost',
-        # 'PORT': ''
     }
 }
 db_from_env = dj_database_url.config(conn_max_age=500)

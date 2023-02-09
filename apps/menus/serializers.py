@@ -34,7 +34,7 @@ class ItemSerializer(serializers.ModelSerializer):
         super(ItemSerializer, self).__init__(*args, **kwargs)
         request = self.context.get('request')
         if request and request.method == 'POST':
-            self.Meta.depth = 0
+            del self.fields['quantity']
         else:
             self.Meta.depth = 1
 

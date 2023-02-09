@@ -78,10 +78,11 @@ class ItemViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.Retr
 
     def create(self, request, *args, **kwargs):
         serializer = ItemSerializer(context={'request': request}, data=request.data)
+        print("serializer.errors")
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-
+        print(serializer.errors, "serializer.errors")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['POST', 'GET', 'PUT'])
