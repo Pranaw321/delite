@@ -118,6 +118,18 @@ DATABASES = {
         'PORT': '',
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'delite',
+#         'USER': 'pranaw',
+#         'PASSWORD': '123456',
+#         'HOST': 'localhost',
+#         'PORT': '',
+#     }
+# }
+
 db_from_env = dj_database_url.config(conn_max_age=500)
 DATABASES['default'].update(db_from_env)
 
