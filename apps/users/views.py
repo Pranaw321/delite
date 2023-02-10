@@ -12,19 +12,17 @@ from rest_framework.settings import api_settings
 import jwt
 
 from delite import settings
+from utils.helper import get_or_none
 from utils.jwt.index import get_token_for_user
-from .models import User
+from .models import User, Admin
 # import local data
-from .serializers import UserSerializer
+from .serializers import UserSerializer, AdminSerializer
 
 
-class UsersViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin,
-                   mixins.CreateModelMixin, viewsets.GenericViewSet, mixins.ListModelMixin):
-    # add permission to check if restaurant is authenticated
-    # permission_classes = [permissions.IsAuthenticated]
-    # lookup_field = "id"
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
+class AdminsViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin,
+                    mixins.CreateModelMixin, viewsets.GenericViewSet, mixins.ListModelMixin):
+    queryset = Admin.objects.all()
+    serializer_class = AdminSerializer
     pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
 
     # 1. List all
@@ -34,7 +32,7 @@ class UsersViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.Ret
     # 2. Create
 
     def create(self, request, *args, **kwargs):
-        serializer = UserSerializer(context={'request': request}, data=request.data)
+        serializer = AdminSerializer(context={'request': request}, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -50,19 +48,18 @@ class UsersViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.Ret
             query_set = {}
             for query in self.request.GET:
                 query_set[query] = self.request.GET.get(query)
-            queryset = User.objects.filter(**query_set)
+            queryset = Admin.objects.filter(**query_set)
         else:
-            queryset = User.objects.all()
+            queryset = Admin.objects.all()
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = UserSerializer(queryset, many=True)
+            serializer = AdminSerializer(queryset, many=True)
             return self.get_paginated_response(serializer.data)
 
     @swagger_auto_schema(
         operation_description="Login the restaurant",
         operation_summary="email and password",
 
-        # request_body is used to specify parameters
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             required=['email', 'password'],
@@ -71,15 +68,14 @@ class UsersViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.Ret
                 'password': openapi.Schema(type=openapi.TYPE_STRING),
             },
         ),
-        tags=['users']
+        tags=['admins']
     )
     @action(detail=False, methods=['POST'])
     def login(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
-
         try:
-            user = User.objects.get(email=email, password=password)
+            user = Admin.objects.get(email=email, password=password)
         except Exception as e:
             user = None
 
@@ -99,3 +95,96 @@ class UsersViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.Ret
             }
         }
         return Response(response_data, status=status.HTTP_200_OK)
+
+
+class UsersViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin,
+                   mixins.CreateModelMixin, viewsets.GenericViewSet, mixins.ListModelMixin):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
+
+    def list(self, request):
+        """
+        param1 -- A first parameter
+        param2 -- A second parameter
+        """
+        if len(self.request.GET) > 0:
+            query_set = {}
+            for query in self.request.GET:
+                query_set[query] = self.request.GET.get(query)
+            queryset = User.objects.filter(**query_set)
+        else:
+            queryset = User.objects.all()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = UserSerializer(queryset, many=True)
+            return self.get_paginated_response(serializer.data)
+
+    @swagger_auto_schema(
+        operation_description="User login",
+
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['phone'],
+            properties={
+                'phone': openapi.Schema(type=openapi.TYPE_STRING),
+            },
+        ),
+        tags=['users']
+    )
+    @action(detail=False, methods=['POST'])
+    def login(self, request):
+        if request.data.get('otp'):
+            return Response({'message': "OTP sent to your number"}, status=status.HTTP_200_OK)
+        else:
+            return Response({'message': "Phone can't be empty"})
+
+    @swagger_auto_schema(
+        operation_description="verify token",
+
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['phone', 'otp'],
+            properties={
+                'phone': openapi.Schema(type=openapi.TYPE_STRING),
+                'otp': openapi.Schema(type=openapi.TYPE_STRING),
+            },
+        ),
+        tags=['users']
+    )
+    @action(detail=False, methods=['POST'])
+    def verify_otp(self, request):
+        user = get_or_none(User, phone=request.data.get('phone'))
+
+        if user is None and request.data.get('otp') == '123456':
+            serializer = UserSerializer(context={'request': request}, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+
+                token = jwt.encode({'id': serializer.data['id']}, settings.SECRET_KEY, algorithm='HS256')
+                response_data = {
+                    'message': 'Login successful',
+                    'token': token,
+                    'user': {
+                        'id': serializer.data['id'],
+                        'name': serializer.data['name'],
+                    }
+                }
+                return Response(response_data, status=status.HTTP_200_OK)
+
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        elif user is not None and request.data.get('otp') == '123456':
+            token = jwt.encode({'id': user.id}, settings.SECRET_KEY, algorithm='HS256')
+            response_data = {
+                'message': 'Login successful',
+                'token': token,
+                'user': {
+                    'id': user.id,
+                    'name': user.name
+                }
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        else:
+            return Response({'message': 'The OTP is not correct'}, status=status.HTTP_400_BAD_REQUEST)

@@ -1,6 +1,7 @@
 # import viewsets
 import copy
-
+from rest_framework.filters import BaseFilterBackend
+import coreapi
 from django.db.models import Prefetch
 from rest_framework import viewsets
 
@@ -28,6 +29,16 @@ from django.conf import settings
 from ..users.serializers import UserSerializer
 
 
+class SimpleFilterBackend(BaseFilterBackend):
+    def get_schema_fields(self, view):
+        return [coreapi.Field(
+            name='query',
+            location='query',
+            required=False,
+            type='string'
+        )]
+
+
 class RestaurantViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin,
                         mixins.CreateModelMixin, viewsets.GenericViewSet, mixins.ListModelMixin):
     # add permission to check if user is authenticated
@@ -36,6 +47,7 @@ class RestaurantViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixin
     queryset = Restaurant.objects.all()
     serializer_class = RestaurantSerializer
     pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
+    filter_backends = (SimpleFilterBackend,)
 
     # 1. List all
     def retrieve(self, request, pk=None):
@@ -62,5 +74,4 @@ class RestaurantViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixin
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = RestaurantSerializer(queryset, many=True)
-            # return Response(serializer.data, status=status.HTTP_200_OK)
             return self.get_paginated_response(serializer.data)

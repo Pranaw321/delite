@@ -43,3 +43,4 @@ class AddsOnSerializer(serializers.ModelSerializer):
     class Meta:
         model = AddsOn
         fields = '__all__'
+

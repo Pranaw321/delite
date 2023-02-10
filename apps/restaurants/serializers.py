@@ -2,7 +2,6 @@
 from rest_framework import serializers
 from datetime import datetime
 from .models import Restaurant
-from ..users.serializers import UserSerializer
 
 
 class RestaurantSerializer(serializers.ModelSerializer):

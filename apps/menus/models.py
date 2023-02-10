@@ -36,9 +36,9 @@ class Item(models.Model):
 
 
 class Quantity(models.Model):
-    objects = None
     title = models.CharField(max_length=255)
     price = models.IntegerField(null=False)  # it will add on price on base price
+    # offerPrice = models.IntegerField(null=False)
     desc = models.CharField(max_length=255, null=True),
     item = models.ForeignKey(Item, on_delete=models.CASCADE, null=True)
 
