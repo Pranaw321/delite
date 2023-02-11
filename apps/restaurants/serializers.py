@@ -6,7 +6,7 @@ from ..menus.serializers import CategorySerializer
 
 
 class RestaurantSerializer(serializers.ModelSerializer):
-    category = CategorySerializer(source="category_set", many=True)
+    # category = CategorySerializer(source="category_set", many=True)
 
     class Meta:
         model = Restaurant
@@ -19,3 +19,5 @@ class RestaurantSerializer(serializers.ModelSerializer):
             del self.fields['category']
         else:
             self.Meta.depth = 1
+
+

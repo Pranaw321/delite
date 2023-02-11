@@ -9,7 +9,6 @@ from rest_framework import viewsets
 # import local data
 from .serializers import ItemSerializer, CategorySerializer, QuantitySerializer
 from .models import Item, Category, Quantity
-from ..restaurants.models import Restaurant
 from ..users.models import User
 
 from rest_framework.views import APIView
@@ -48,19 +47,11 @@ class CategoryViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.
         return Response(new_dict)
 
     # 2. Create
-    def create(self, request):
-        data = request.data
-        restaurant_id = int(request.data.get('restaurant'))
-        try:
-            restaurant = Restaurant.objects.get(id=restaurant_id)
-        except Restaurant.DoesNotExist:
-            return Response({'error': 'Restaurant with id {} does not exist'.format(restaurant_id)},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        serializer = CategorySerializer(data=data, context={'request': request})
+    def create(self, request, *args, **kwargs):
+        serializer = CategorySerializer(context={'request': request}, data=request.data)
         if serializer.is_valid():
-            category = serializer.save(restaurant=restaurant)
-            return Response({'message': "Created successfully"}, status=status.HTTP_201_CREATED)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

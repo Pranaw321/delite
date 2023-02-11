@@ -46,13 +46,23 @@ class RestaurantViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixin
     # 1. List all
     def retrieve(self, request, pk=None):
         queryset = Restaurant.objects.all()
+
         restaurant = get_object_or_404(queryset, pk=pk)
+
+        qs = Category.objects.prefetch_related(
+            Prefetch('item_category', queryset=Item.objects.all())
+        ).filter(pk=pk)
+
         serializer = RestaurantSerializer(restaurant)
-        return Response(serializer.data)
+        new_dict = copy.deepcopy(serializer.data)
+        category_serializer = CategorySerializer(qs, many=True)
+        new_dict['category'] = category_serializer.data
+
+        return Response(new_dict)
 
     # 2. Create
     def create(self, request, *args, **kwargs):
-        serializer = RestaurantSerializer(context={'request': request}, data=request.data)
+        serializer = RestaurantSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)

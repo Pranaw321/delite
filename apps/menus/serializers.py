@@ -1,8 +1,7 @@
 # import serializer from rest_framework
 from rest_framework import serializers
 from .models import Item, Quantity, Category, AddsOn
-# from ..restaurants.serializers import RestaurantSerializer
-# from ..restaurants.serializers import RestaurantSerializer
+
 
 
 class QuantitySerializer(serializers.ModelSerializer):
@@ -39,7 +38,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ('name', 'desc', 'restaurant', 'status', 'item')
+        fields = '__all__'
         read_only_fields = ['item']
 
     def __init__(self, *args, **kwargs):
