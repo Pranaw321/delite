@@ -11,4 +11,11 @@ class RestaurantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Restaurant
         fields = '__all__'
-        depth = 1
+
+    def __init__(self, *args, **kwargs):
+        super(RestaurantSerializer, self).__init__(*args, **kwargs)
+        request = self.context.get('request')
+        if request and request.method == 'POST':
+            del self.fields['category']
+        else:
+            self.Meta.depth = 1

@@ -1,6 +1,8 @@
 # import serializer from rest_framework
 from rest_framework import serializers
 from .models import Item, Quantity, Category, AddsOn
+# from ..restaurants.serializers import RestaurantSerializer
+# from ..restaurants.serializers import RestaurantSerializer
 
 
 class QuantitySerializer(serializers.ModelSerializer):
@@ -33,15 +35,17 @@ class AddsOnSerializer(serializers.ModelSerializer):
 
 class CategorySerializer(serializers.ModelSerializer):
     item = ItemSerializer(source="item_category", many=True)
+    # restaurant = RestaurantSerializer()
 
     class Meta:
         model = Category
-        fields = '__all__'
+        fields = ('name', 'desc', 'restaurant', 'status', 'item')
+        read_only_fields = ['item']
 
     def __init__(self, *args, **kwargs):
         super(CategorySerializer, self).__init__(*args, **kwargs)
         request = self.context.get('request')
         if request and request.method == 'POST':
-            self.Meta.depth = 0
+            del self.fields['item']
         else:
             self.Meta.depth = 1

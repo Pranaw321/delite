@@ -52,7 +52,7 @@ class RestaurantViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixin
 
     # 2. Create
     def create(self, request, *args, **kwargs):
-        serializer = RestaurantSerializer(data=request.data)
+        serializer = RestaurantSerializer(context={'request': request}, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)

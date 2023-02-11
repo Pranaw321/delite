@@ -12,7 +12,7 @@ class Category(models.Model):
         ('inactive', 'Inactive'))
     name = models.CharField(max_length=255)
     desc = models.CharField(max_length=255, null=True),
-    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, null=True)
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, null=False)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
 
 
