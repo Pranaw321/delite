@@ -3,20 +3,6 @@ from rest_framework import serializers
 from .models import Item, Quantity, Category, AddsOn
 
 
-class CategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        fields = '__all__'
-
-    def __init__(self, *args, **kwargs):
-        super(CategorySerializer, self).__init__(*args, **kwargs)
-        request = self.context.get('request')
-        if request and request.method == 'POST':
-            self.Meta.depth = 0
-        else:
-            self.Meta.depth = 1
-
-
 class QuantitySerializer(serializers.ModelSerializer):
     class Meta:
         model = Quantity
@@ -44,3 +30,18 @@ class AddsOnSerializer(serializers.ModelSerializer):
         model = AddsOn
         fields = '__all__'
 
+
+class CategorySerializer(serializers.ModelSerializer):
+    item = ItemSerializer(source="item_category", many=True)
+
+    class Meta:
+        model = Category
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super(CategorySerializer, self).__init__(*args, **kwargs)
+        request = self.context.get('request')
+        if request and request.method == 'POST':
+            self.Meta.depth = 0
+        else:
+            self.Meta.depth = 1

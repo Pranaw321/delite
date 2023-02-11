@@ -1,5 +1,8 @@
 # import viewsets
 import copy
+
+from django.db.models.query import QuerySet
+from django.http import JsonResponse
 from rest_framework.filters import BaseFilterBackend
 import coreapi
 from django.db.models import Prefetch
@@ -8,6 +11,8 @@ from rest_framework import viewsets
 # import local data
 from .serializers import RestaurantSerializer
 from .models import Restaurant
+from ..menus.models import Category, Item
+from ..menus.serializers import CategorySerializer
 from ..users.models import User
 
 from rest_framework.views import APIView
@@ -29,16 +34,6 @@ from django.conf import settings
 from ..users.serializers import UserSerializer
 
 
-class SimpleFilterBackend(BaseFilterBackend):
-    def get_schema_fields(self, view):
-        return [coreapi.Field(
-            name='query',
-            location='query',
-            required=False,
-            type='string'
-        )]
-
-
 class RestaurantViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin,
                         mixins.CreateModelMixin, viewsets.GenericViewSet, mixins.ListModelMixin):
     # add permission to check if user is authenticated
@@ -47,18 +42,13 @@ class RestaurantViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixin
     queryset = Restaurant.objects.all()
     serializer_class = RestaurantSerializer
     pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
-    filter_backends = (SimpleFilterBackend,)
 
     # 1. List all
     def retrieve(self, request, pk=None):
         queryset = Restaurant.objects.all()
         restaurant = get_object_or_404(queryset, pk=pk)
         serializer = RestaurantSerializer(restaurant)
-        users = User.objects.filter(restaurant=pk)
-        user_serializer = UserSerializer(users, many=True)
-        new_serializer_data = copy.deepcopy(serializer.data)
-        new_serializer_data['users'] = user_serializer.data
-        return Response(new_serializer_data)
+        return Response(serializer.data)
 
     # 2. Create
     def create(self, request, *args, **kwargs):
