@@ -26,7 +26,7 @@ class AdminSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def __init__(self, *args, **kwargs):
-        super(UserSerializer, self).__init__(*args, **kwargs)
+        super(AdminSerializer, self).__init__(*args, **kwargs)
         request = self.context.get('request')
         if request and request.method == 'POST':
             self.Meta.depth = 0

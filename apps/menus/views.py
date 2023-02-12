@@ -39,18 +39,18 @@ class CategoryViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.
     # 1. List all
     def retrieve(self, request, pk=None):
         category = Category.objects.get(pk=pk)
-        items = Category.objects.get(pk=pk).item_set.all().values()
+        items = Category.objects.get(pk=pk).item_category.all().values()
 
         serializer = CategorySerializer(category)
         new_dict = copy.deepcopy(serializer.data)
-        new_dict['items'] = items
+        # new_dict['items'] = items
         return Response(new_dict)
 
     # 2. Create
     def create(self, request, *args, **kwargs):
         serializer = CategorySerializer(context={'request': request}, data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(restaurant_id=request.data.get('restaurant'))
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -84,7 +84,7 @@ class ItemViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.Retr
     def create(self, request, *args, **kwargs):
         serializer = ItemSerializer(context={'request': request}, data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(restaurant_id=request.data.get('restaurant'), category_id=request.data.get('category'))
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
