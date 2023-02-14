@@ -50,7 +50,7 @@ class CategoryViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.
     def create(self, request, *args, **kwargs):
         serializer = CategorySerializer(context={'request': request}, data=request.data)
         if serializer.is_valid():
-            serializer.save(restaurant_id=request.data.get('restaurant'))
+            serializer.save(restaurant_id=int(request.data.get('restaurant')))
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -18,6 +18,6 @@ class Restaurant(models.Model):
     zip_code = models.CharField("ZIP / Postal code", max_length=12),
     city = models.CharField("City", max_length=1024)
     country = models.CharField(max_length=1024)
-    lat = models.CharField(max_length=255, null=True, default='')
-    lang = models.CharField(max_length=255, null=False, default='')
+    lat = models.CharField(max_length=255, null=True, default=None)
+    lang = models.CharField(max_length=255, null=True, default=None)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
