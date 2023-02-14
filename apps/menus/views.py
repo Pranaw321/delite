@@ -2,6 +2,7 @@ import copy
 import json
 
 from django.db.models import Prefetch, Count, prefetch_related_objects
+from django.db.models.query_utils import Q
 from django.http import JsonResponse
 from rest_framework import viewsets
 
@@ -38,28 +39,32 @@ class CategoryViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.
     # 1. List all
     def retrieve(self, request, pk=None):
         category = Category.objects.get(pk=pk)
-        items = Category.objects.get(pk=pk).item_set.all().values()
+        items = Category.objects.get(pk=pk).item_category.all().values()
 
         serializer = CategorySerializer(category)
         new_dict = copy.deepcopy(serializer.data)
-        new_dict['items'] = items
+        # new_dict['items'] = items
         return Response(new_dict)
 
     # 2. Create
     def create(self, request, *args, **kwargs):
         serializer = CategorySerializer(context={'request': request}, data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(restaurant_id=request.data.get('restaurant'))
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    restaurant_id = openapi.Parameter('restaurant_id', openapi.IN_QUERY, required=True,
+                                      description="Get category list by restaurant",
+                                      type=openapi.TYPE_NUMBER)
+
+    @swagger_auto_schema(manual_parameters=[restaurant_id])
     def list(self, request):
-        queryset = Category.objects.all()
+        queryset = Category.objects.filter(restaurant_id=self.request.query_params.get('restaurant_id'))
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = CategorySerializer(queryset, many=True)
-            # return Response(serializer.data, status=status.HTTP_200_OK)
             return self.get_paginated_response(serializer.data)
 
 
@@ -79,12 +84,11 @@ class ItemViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.Retr
     def create(self, request, *args, **kwargs):
         serializer = ItemSerializer(context={'request': request}, data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(restaurant_id=request.data.get('restaurant'), category_id=request.data.get('category'))
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['POST', 'GET', 'PUT'])
+    @action(detail=False, methods=['POST', 'GET', 'PUT', 'DELETE'])
     def quantity(self, request, *args, **kwargs):
         if request and request.method == 'POST':
             serializer = QuantitySerializer(data=request.data)
@@ -94,12 +98,34 @@ class ItemViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.Retr
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         elif request and request.method == 'GET':
-            return Response({})
+            filters = {}
+            if self.request.query_params.get('item_id'):
+                filters['item_id'] = self.request.query_params.get('item_id')
+            filter_q = Q(**filters)
+            quantity = Quantity.objects.filter(filter_q)
+            serializer = QuantitySerializer(quantity, many=True)
+            return self.get_paginated_response(serializer.data)
 
+    restaurant_id = openapi.Parameter('restaurant_id', openapi.IN_QUERY, required=True,
+                                      description="Get category list by restaurant",
+                                      type=openapi.TYPE_NUMBER)
+    category_id = openapi.Parameter('category_id', openapi.IN_QUERY, required=False,
+                                    description="Get item list by category",
+                                    type=openapi.TYPE_NUMBER)
+
+    @swagger_auto_schema(manual_parameters=[restaurant_id, category_id])
     def list(self, request):
+        # prepare filters to apply to queryset
+        filters = {}
+        if self.request.query_params.get('restaurant_id'):
+            filters['restaurant_id'] = self.request.query_params.get('restaurant_id')
+        if self.request.query_params.get('category_id'):
+            filters['category_id'] = self.request.query_params.get('category_id')
+
+        filter_q = Q(**filters)
         qs = Item.objects.prefetch_related(
             Prefetch('quantity_set', queryset=Quantity.objects.all())
-        )
+        ).filter(filter_q)
 
         page = self.paginate_queryset(qs)
         if page is not None:

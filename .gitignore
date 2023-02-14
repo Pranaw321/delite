@@ -1,1 +1,3 @@
 /delite/settings.py
+ "**/migrations/*"
+ **/migrations/*

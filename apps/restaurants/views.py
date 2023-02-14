@@ -1,12 +1,18 @@
 # import viewsets
 import copy
 
+from django.db.models.query import QuerySet
+from django.http import JsonResponse
+from rest_framework.filters import BaseFilterBackend
+import coreapi
 from django.db.models import Prefetch
 from rest_framework import viewsets
 
 # import local data
 from .serializers import RestaurantSerializer
 from .models import Restaurant
+from ..menus.models import Category, Item
+from ..menus.serializers import CategorySerializer
 from ..users.models import User
 
 from rest_framework.views import APIView
@@ -40,13 +46,19 @@ class RestaurantViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixin
     # 1. List all
     def retrieve(self, request, pk=None):
         queryset = Restaurant.objects.all()
+
         restaurant = get_object_or_404(queryset, pk=pk)
+
+        qs = Category.objects.prefetch_related(
+            Prefetch('item_category', queryset=Item.objects.all())
+        ).filter(pk=pk)
+
         serializer = RestaurantSerializer(restaurant)
-        users = User.objects.filter(restaurant=pk)
-        user_serializer = UserSerializer(users, many=True)
-        new_serializer_data = copy.deepcopy(serializer.data)
-        new_serializer_data['users'] = user_serializer.data
-        return Response(new_serializer_data)
+        new_dict = copy.deepcopy(serializer.data)
+        category_serializer = CategorySerializer(qs, many=True)
+        new_dict['category'] = category_serializer.data
+
+        return Response(new_dict)
 
     # 2. Create
     def create(self, request, *args, **kwargs):
@@ -62,5 +74,4 @@ class RestaurantViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixin
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = RestaurantSerializer(queryset, many=True)
-            # return Response(serializer.data, status=status.HTTP_200_OK)
             return self.get_paginated_response(serializer.data)
