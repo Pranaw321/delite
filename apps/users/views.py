@@ -92,7 +92,6 @@ class AdminsViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.Re
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
         payload = {'id': user.id}
         token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
-        print(type(user), "ggggg111")
         response_data = {
             'message': 'Login successful',
             'token': token,

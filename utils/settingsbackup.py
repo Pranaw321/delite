@@ -168,3 +168,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
 )
+
+
+# sudo supervisorctl restart
+
+# python manage.py makemigrations --empty yourappname
+#
+# python manage.py migrate yourappname
