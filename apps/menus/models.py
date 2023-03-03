@@ -14,6 +14,7 @@ class Category(models.Model):
     desc = models.CharField(max_length=255)
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, null=False)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
+    img = models.ImageField(null=True)
 
 
 class Item(models.Model):

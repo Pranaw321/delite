@@ -135,19 +135,42 @@ class UsersViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.Ret
 
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
-            required=['phone'],
+            required=['phone', 'name'],
             properties={
                 'phone': openapi.Schema(type=openapi.TYPE_STRING),
+                'name': openapi.Schema(type=openapi.TYPE_STRING),
             },
         ),
         tags=['users']
     )
     @action(detail=False, methods=['POST'])
     def login(self, request):
-        if request.data.get('otp'):
-            return Response({'message': "OTP sent to your number"}, status=status.HTTP_200_OK)
+        user = get_or_none(User, phone=request.data.get('phone'))
+        if user is None:
+            serializer = UserSerializer(context={'request': request}, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                token = jwt.encode({'id': serializer.data['id']}, settings.SECRET_KEY, algorithm='HS256')
+                response_data = {
+                    'message': 'Login successful',
+                    'token': token,
+                    'user': {
+                        'id': serializer.data['id'],
+                        'name': serializer.data['name'],
+                    }
+                }
+                return Response(response_data, status=status.HTTP_200_OK)
         else:
-            return Response({'message': "Phone can't be empty"})
+            token = jwt.encode({'id': user.id}, settings.SECRET_KEY, algorithm='HS256')
+            response_data = {
+                'message': 'Login successful',
+                'token': token,
+                'user': {
+                    'id': user.id,
+                    'name': user.name
+                }
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         operation_description="verify token",

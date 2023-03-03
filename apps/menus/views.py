@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from rest_framework import viewsets
 
 # import local data
+from utils.helper import upload_image
 from .serializers import ItemSerializer, CategorySerializer, QuantitySerializer
 from .models import Item, Category, Quantity
 from ..users.models import User
@@ -26,6 +27,7 @@ from django.shortcuts import get_object_or_404
 from utils.jwt.index import get_token_for_user, get_user_for_token
 import jwt
 from django.conf import settings
+import boto3
 
 from ..users.serializers import UserSerializer
 
@@ -49,7 +51,10 @@ class CategoryViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.
     # 2. Create
     def create(self, request, *args, **kwargs):
         serializer = CategorySerializer(context={'request': request}, data=request.data)
+        img = request.FILES["img"]
+
         if serializer.is_valid():
+            upload_image(request.FILES['img'].name, img)
             serializer.save(restaurant_id=int(request.data.get('restaurant')))
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
