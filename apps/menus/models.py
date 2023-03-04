@@ -28,6 +28,7 @@ class Item(models.Model):
     title = models.CharField(max_length=255)
     desc = models.CharField(max_length=255, null=True)
     slug = models.CharField(max_length=255, null=True)
+    img = models.ImageField(null=True)
     recipe = models.CharField(max_length=255)
     type = models.CharField(max_length=10, choices=TYPE_CHOICES, default='veg')
     category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, related_name='item_category')

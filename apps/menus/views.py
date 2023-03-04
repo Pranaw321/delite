@@ -7,7 +7,7 @@ from django.http import JsonResponse
 from rest_framework import viewsets
 
 # import local data
-from utils.helper import upload_image
+from utils.helper import upload_image, unique_file_name
 from .serializers import ItemSerializer, CategorySerializer, QuantitySerializer
 from .models import Item, Category, Quantity
 from ..users.models import User
@@ -88,8 +88,12 @@ class ItemViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.Retr
 
     def create(self, request, *args, **kwargs):
         serializer = ItemSerializer(context={'request': request}, data=request.data)
+        img = request.FILES["img"]
         if serializer.is_valid():
-            serializer.save(restaurant_id=request.data.get('restaurant'), category_id=request.data.get('category'))
+            filename = unique_file_name(request.FILES['img'].name)
+            upload_image(filename, img)
+            serializer.save(img=filename, restaurant_id=request.data.get('restaurant'),
+                            category_id=request.data.get('category'))
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
