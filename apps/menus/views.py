@@ -1,35 +1,26 @@
 import copy
-import json
 
 from django.db.models import Prefetch, Count, prefetch_related_objects
 from django.db.models.query_utils import Q
-from django.http import JsonResponse
 from rest_framework import viewsets
 
 # import local data
 from utils.helper import upload_image, unique_file_name
 from .serializers import ItemSerializer, CategorySerializer, QuantitySerializer
 from .models import Item, Category, Quantity
-from ..users.models import User
 
-from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework import permissions
 from rest_framework import mixins
 from rest_framework.decorators import action
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from mixin.myPaginationMixins import MyPaginationMixin
+
 from rest_framework.settings import api_settings
 from django.shortcuts import get_object_or_404
-from utils.jwt.index import get_token_for_user, get_user_for_token
-import jwt
-from django.conf import settings
-import boto3
 
-from ..users.serializers import UserSerializer
+from .swagger import restaurant_prefix
+from ..restaurants.models import Restaurant
 
 
 class CategoryViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin,
@@ -52,21 +43,30 @@ class CategoryViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.
     def create(self, request, *args, **kwargs):
         serializer = CategorySerializer(context={'request': request}, data=request.data)
         img = request.FILES["img"]
-
         if serializer.is_valid():
-            upload_image(request.FILES['img'].name, img)
-            serializer.save(restaurant_id=int(request.data.get('restaurant')))
+            filename = unique_file_name(request.FILES['img'].name)
+            upload_image(filename, img)
+            serializer.save(img=filename, restaurant_id=int(request.data.get('restaurant')))
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    restaurant_id = openapi.Parameter('restaurant_id', openapi.IN_QUERY, required=True,
+    restaurant_id = openapi.Parameter('restaurant_id', openapi.IN_QUERY, required=False,
                                       description="Get category list by restaurant",
                                       type=openapi.TYPE_NUMBER)
 
-    @swagger_auto_schema(manual_parameters=[restaurant_id])
+    @swagger_auto_schema(manual_parameters=[restaurant_id, restaurant_prefix])
     def list(self, request):
-        queryset = Category.objects.filter(restaurant_id=self.request.query_params.get('restaurant_id'))
+
+        filters = {}
+        if self.request.query_params.get('restaurant_prefix'):
+            restaurant = Restaurant.objects.get(prefix=self.request.query_params.get('restaurant_prefix'))
+            filters['restaurant_id'] = restaurant.id
+        if self.request.query_params.get('restaurant_id'):
+            filters['restaurant_id'] = self.request.query_params.get('restaurant_id')
+        filter_q = Q(**filters)
+
+        queryset = Category.objects.filter(filter_q)
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = CategorySerializer(queryset, many=True)

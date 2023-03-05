@@ -11,6 +11,7 @@ class Restaurant(models.Model):
         ('active', 'Active'),
         ('inactive', 'Inactive'))
     name = models.CharField(max_length=255)
+    prefix = models.CharField(max_length=255, null=False)
     email = models.CharField(max_length=255)
     phone = models.IntegerField(null=True),
     address1 = models.CharField("Address line 1", max_length=1024, ),

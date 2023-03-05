@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 import dj_database_url
+import os
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +27,7 @@ SECRET_KEY = 'django-insecure-un_ga_ot=#poubh24q-t1(_58+^%rnc962dh%*4-9m5274qut2
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['52.90.14.223']
+ALLOWED_HOSTS = ['*']
 
 CORS_ORIGIN_ALLOW_ALL = True
 
@@ -45,10 +47,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_swagger',
     'corsheaders',
     'apps.users',
     'apps.restaurants',
     'apps.menus',
+    'apps.orders',
     'drf_yasg'
 ]
 
@@ -154,10 +158,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
-STATIC_URL = 'static/'
-import os
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
@@ -165,13 +167,44 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # WHITENOISE_USE_FINDERS = True
 # STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'static'),
-)
 
 
-# sudo supervisorctl restart
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
 
-# python manage.py makemigrations --empty yourappname
+# https://www.digitalocean.com/community/tutorials/how-to-set-up-django-with-postgres-nginx-and-gunicorn-on-ubuntu-16-04
+#     https: // stackoverflow.com / questions / 29872174 / wsgi - nginx - error - permission - denied -
+#     while -connecting - to - upstream
+# https://djangocentral.com/deploy-django-with-nginx-gunicorn-postgresql-and-lets-encrypt-ssl-on-ubuntu/
+# https://phoenixnap.com/kb/nginx-start-stop-restart
+
+# server {
+#     listen 80;
+#     server_name devapi.hellomenu.in;
 #
-# python manage.py migrate yourappname
+#     location = /favicon.ico { access_log off; log_not_found off; }
+#     location /static/ {
+#         root /home/ubuntu/delite;
+#     }
+#
+#     location / {
+#         include proxy_params;
+#         proxy_pass http://unix:/home/ubuntu/delite/delitey.sock;
+#     }
+# }
