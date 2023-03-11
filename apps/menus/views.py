@@ -19,7 +19,7 @@ from drf_yasg import openapi
 from rest_framework.settings import api_settings
 from django.shortcuts import get_object_or_404
 
-from .swagger import restaurant_prefix
+from .swagger import restaurant_prefix, restaurant_id, category_id
 from ..restaurants.models import Restaurant
 
 
@@ -51,10 +51,6 @@ class CategoryViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    restaurant_id = openapi.Parameter('restaurant_id', openapi.IN_QUERY, required=False,
-                                      description="Get category list by restaurant",
-                                      type=openapi.TYPE_NUMBER)
-
     @swagger_auto_schema(manual_parameters=[restaurant_id, restaurant_prefix])
     def list(self, request):
 
@@ -84,7 +80,7 @@ class ItemViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.Retr
         queryset = Item.objects.all()
         item = get_object_or_404(queryset, pk=pk)
         serializer = ItemSerializer(item)
-        return Response(serializer)
+        return Response(serializer.data)
 
     def create(self, request, *args, **kwargs):
         serializer = ItemSerializer(context={'request': request}, data=request.data)
@@ -114,13 +110,6 @@ class ItemViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.Retr
             quantity = Quantity.objects.filter(filter_q)
             serializer = QuantitySerializer(quantity, many=True)
             return self.get_paginated_response(serializer.data)
-
-    restaurant_id = openapi.Parameter('restaurant_id', openapi.IN_QUERY, required=True,
-                                      description="Get category list by restaurant",
-                                      type=openapi.TYPE_NUMBER)
-    category_id = openapi.Parameter('category_id', openapi.IN_QUERY, required=False,
-                                    description="Get item list by category",
-                                    type=openapi.TYPE_NUMBER)
 
     @swagger_auto_schema(manual_parameters=[restaurant_id, category_id])
     def list(self, request):

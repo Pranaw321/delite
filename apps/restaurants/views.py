@@ -1,16 +1,14 @@
 # import viewsets
 import copy
+from django.db.models.query_utils import Q
 
-from django.db.models.query import QuerySet
-from django.http import JsonResponse
-from rest_framework.filters import BaseFilterBackend
-import coreapi
 from django.db.models import Prefetch
 from rest_framework import viewsets
 
 # import local data
 from .serializers import RestaurantSerializer
 from .models import Restaurant
+from .swagger import restaurant_prefix
 from ..menus.models import Category, Item
 from ..menus.serializers import CategorySerializer
 from ..users.models import User
@@ -36,9 +34,6 @@ from ..users.serializers import UserSerializer
 
 class RestaurantViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin,
                         mixins.CreateModelMixin, viewsets.GenericViewSet, mixins.ListModelMixin):
-    # add permission to check if user is authenticated
-    # permission_classes = [permissions.IsAuthenticated]
-    # lookup_field = "id"
     queryset = Restaurant.objects.all()
     serializer_class = RestaurantSerializer
     pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
@@ -76,9 +71,23 @@ class RestaurantViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixin
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(manual_parameters=[restaurant_prefix])
     def list(self, request):
-        queryset = Restaurant.objects.all()
+        filters = {}
+        if self.request.query_params.get('restaurant_prefix'):
+            restaurant = Restaurant.objects.get(prefix=self.request.query_params.get('restaurant_prefix'))
+            filters['restaurant_id'] = restaurant.id
+        filter_q = Q(**filters)
+        queryset = Restaurant.objects.all(filter_q)
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = RestaurantSerializer(queryset, many=True)
             return self.get_paginated_response(serializer.data)
+
+    @swagger_auto_schema(manual_parameters=[restaurant_prefix])
+    @action(detail=False, methods=['Get'], name='get restaurant by prefix', url_path='by-prefix')
+    def by_prefix(self, request):
+        queryset = Restaurant.objects.all()
+        restaurant = get_object_or_404(queryset, prefix=self.request.query_params.get('restaurant_prefix'))
+        serializer = RestaurantSerializer(restaurant)
+        return Response(serializer.data)

@@ -25,7 +25,11 @@ class Item(models.Model):
     TYPE_CHOICES = (('veg', 'Veg'),
                     ('nonveg', 'Nonveg'),
                     ('vegan', 'Vegan'))
+    PRICE_TYPE_CHOICES = (('fixed', 'Fixed'),
+                   ('variable', 'Variable'))
     title = models.CharField(max_length=255)
+    priceType = models.CharField(max_length=10, choices=PRICE_TYPE_CHOICES, default='fixed')
+    price = models.IntegerField(blank=True, null=True)
     desc = models.CharField(max_length=255, null=True)
     slug = models.CharField(max_length=255, null=True)
     img = models.ImageField(null=True)
