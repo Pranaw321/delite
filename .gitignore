@@ -5,3 +5,5 @@
 !**/migrations
 !**/migrations/__init__.py
 debug.log
+**/*debug.log
+*debug.log

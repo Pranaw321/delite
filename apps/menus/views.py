@@ -96,7 +96,7 @@ class ItemViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.Retr
     @action(detail=False, methods=['POST', 'GET', 'PUT', 'DELETE'])
     def quantity(self, request, *args, **kwargs):
         if request and request.method == 'POST':
-            serializer = QuantitySerializer(data=request.data)
+            serializer = QuantitySerializer(data=eval(request.data['quantity']), many=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)

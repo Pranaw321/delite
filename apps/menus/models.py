@@ -26,7 +26,7 @@ class Item(models.Model):
                     ('nonveg', 'Nonveg'),
                     ('vegan', 'Vegan'))
     PRICE_TYPE_CHOICES = (('fixed', 'Fixed'),
-                   ('variable', 'Variable'))
+                          ('variable', 'Variable'))
     title = models.CharField(max_length=255)
     priceType = models.CharField(max_length=10, choices=PRICE_TYPE_CHOICES, default='fixed')
     price = models.IntegerField(blank=True, null=True)
@@ -49,6 +49,8 @@ class Quantity(models.Model):
     desc = models.CharField(max_length=255, null=True),
     item = models.ForeignKey(Item, on_delete=models.CASCADE, null=True)
 
+    class Meta:
+        unique_together = ('title', 'item',)
 
 class AddsOn(models.Model):
     title = models.CharField(max_length=255)
